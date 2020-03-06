@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+  <title>My chat</title>
+  <script>
+
+      const socket = io.connect("http://127.0.0.1:5000");
+
+      socket.on('connect', function () {
+          socket.send('User has connected!');
+
+          let message_input = document.getElementById('message_text');
+
+          document.getElementById('messForm').onsubmit = function (e) {
+              e.preventDefault();
+              let message = message_input.value.trim();
+              if (message.length) {
+                  socket.emit('send_message', {
+                      username: "{{ username }}",
+                      message: message
+                  })
+              }
+              message_input.value = '';
+              message_input.focus();
+          }
+
+
+      });
+
+      socket.on('receive_message', function (data) {
+          const newNode = document.createElement('div');
+          const justSpace = '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'
+          const currentTime = sendTimeToServer()
+
+          newNode.className = 'alert alert-info';
+          newNode.innerHTML = `<b>${data.username}</b> ${justSpace} ${currentTime} <br> ${data.message} `;
+          document.getElementById('all_mess').appendChild(newNode);
+
+
+      });
+
+
+      function sendTimeToServer() {
+          let time = new Date();
+          return time.toLocaleTimeString()
+      }
+
+  </script>
+</head>
+<body>
+
+<div class="container">
+  <div class="py-5 text-center">
+    <h2>Web Чат</h2>
+  </div>
+
+  <div class="row">
+    <div class="col-6">
+      <form id="messForm" method="post">
+        <label for="message_text">Вы присоеденились к чату под именем {{ username }}</label>
+        <textarea id="message_text" class="form-control" placeholder="Введите сообщение"></textarea>
+        <br>
+        <input type="submit" value="Отправить" class="btn btn-dark">
+      </form>
+    </div>
+
+
+  <div class="col-6">
+    <h3>Сообщения</h3>
+    <div id="all_mess"></div>
+  </div>
+
+    <div class="col-6">
+      <div id="usersOnline"></div>
+    </div>
+
+</div>
+</div>
+</body>
+</html>
