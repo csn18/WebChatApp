@@ -20,10 +20,13 @@
           document.getElementById('messForm').onsubmit = function (e) {
               e.preventDefault();
               let message = message_input.value.trim();
+              let time = sendTimeToServer()
+
               if (message.length) {
                   socket.emit('send_message', {
                       username: "{{ username }}",
-                      message: message
+                      message: message,
+                      time: time
                   })
               }
               message_input.value = '';
@@ -64,23 +67,33 @@
     <div class="col-6">
       <form id="messForm" method="post">
         <label for="message_text">Вы присоеденились к чату под именем {{ username }}</label>
-        <textarea id="message_text" class="form-control" placeholder="Введите сообщение"></textarea>
+        <input id="message_text" name="message_text" type="text" class="form-control" placeholder="Введите сообщение" required>
         <br>
         <input type="submit" value="Отправить" class="btn btn-dark">
       </form>
     </div>
 
 
-  <div class="col-6">
-    <h3>Сообщения</h3>
-    <div id="all_mess"></div>
-  </div>
+    <div class="col-6">
+      <h3>Сообщения</h3>
+      <form method="post">
+        {% for id, username, message, time in history %}
+        <div id="all_mess">
+          <div class="alert alert-info">
+            <b>{{ username }}</b>
+            {{ time }} <br>
+            {{ message }}
+          </div>
+        </div>
+        {% endfor %}
+      </form>
+    </div>
 
     <div class="col-6">
       <div id="usersOnline"></div>
     </div>
 
-</div>
+  </div>
 </div>
 </body>
 </html>
