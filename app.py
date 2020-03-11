@@ -1,16 +1,15 @@
+import datetime
 from datetime import datetime
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, make_response
-from flask_socketio import SocketIO
+
 import jwt
 import mysql.connector
-import datetime
-
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, make_response
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'myConfig'
 socketio = SocketIO(app)
-
 
 mydb = mysql.connector.connect(
     host='127.0.0.1',
@@ -31,7 +30,6 @@ def home():
 
 @app.route('/login', methods=['POST'])
 def login():
-
     username = request.form['username']
     password = request.form['password']
 
@@ -39,7 +37,11 @@ def login():
 
     if data:
         token = query_fetchall(f'SELECT token FROM user WHERE username="{username}"')[0]
-        return redirect(url_for('chat', token=token))
+
+        response = redirect(url_for('chat'))
+        response.set_cookie('token', token)
+        return response
+
     else:
         if request.form['username'] and request.form['password']:
             session['logged_in'] = True
@@ -51,16 +53,15 @@ def login():
 
             insert_db('INSERT INTO user (username, password, token) VALUE (%s,%s,%s)', (username, password, token))
 
-            return redirect(chat('addtoken', token=token))
+            response = redirect(url_for('chat'))
+            response.set_cookie('token', token)
+            return response
         else:
             return make_response('Unable to verify', 403)
 
 
 @socketio.on('send_message')
 def handle_send_message_event(data):
-    # data = [username, message, time]
-    app.logger.info(f"{data['username']} has sent message: {data['message']}")
-
     username = data['username']
     message = data['message']
     time = data['time']
@@ -73,13 +74,13 @@ def handle_send_message_event(data):
 def check_token(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        token = request.args.get('token')
+        token = request.cookies.get('token')
         if not token:
-            return jsonify({'message': 'Missing token'}), 403
+            return '<h1>Токен отсутствует</h1>'
         try:
             jwt.decode(token, app.config['SECRET_KEY'])
         except:
-            return jsonify({'message': 'Invalid Token'}), 403
+            return '<h1>Неверный токен</h1>'
         return func(*args, **kwargs)
 
     return wrapped
@@ -88,13 +89,11 @@ def check_token(func):
 @app.route('/chat')
 @check_token
 def chat():
-    token = request.args.get('token')
+    token = request.cookies.get('token')
 
-    username = query_fetchall(f'SELECT username FROM user WHERE token="{ token }"')[0]
+    username = query_fetchall(f'SELECT username FROM user WHERE token="{token}"')[0]
 
     history = query_fetchall('SELECT * FROM history')
-
-    print(history)
 
     return render_template('chat.html',
                            username=username,
