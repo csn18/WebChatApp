@@ -1,10 +1,9 @@
 import datetime
-from datetime import datetime
 from functools import wraps
 
 import jwt
 import mysql.connector
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, make_response
+from flask import Flask, render_template, request, redirect, url_for, session, make_response
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
@@ -33,7 +32,7 @@ def login():
     username = request.form['username']
     password = request.form['password']
 
-    data = query_fetchone('SELECT * FROM user WHERE username ="' + username + '" and password="' + password + '"')
+    data = query_fetchone(f'SELECT * FROM user WHERE username ="{username}" and password="{password}"')
 
     if data:
         token = query_fetchall(f'SELECT token FROM user WHERE username="{username}"')[0]
@@ -56,19 +55,6 @@ def login():
             response = redirect(url_for('chat'))
             response.set_cookie('token', token)
             return response
-        else:
-            return make_response('Unable to verify', 403)
-
-
-@socketio.on('send_message')
-def handle_send_message_event(data):
-    username = data['username']
-    message = data['message']
-    time = data['time']
-
-    insert_db('INSERT INTO history (username, message, time) VALUE (%s,%s,%s)', (username, message, time))
-
-    socketio.emit('receive_message', data)
 
 
 def check_token(func):
@@ -97,8 +83,28 @@ def chat():
 
     return render_template('chat.html',
                            username=username,
-                           history=history,
+                           history=history
                            )
+
+
+@socketio.on('send_message')
+def handle_send_message_event(data):
+    insert_db('INSERT INTO history (username, message, time) VALUE (%s,%s,%s)',
+              (data['username'], data['message'], data['time']))
+
+    socketio.emit('receive_message', data)
+
+
+clients = []
+
+
+@socketio.on('user_connect')
+def user_connect(data):
+    username = data['username']
+    clients.append(username)
+    all_users = list(set(clients))
+    print(all_users)
+    socketio.emit('users', all_users)
 
 
 def query_fetchall(query):

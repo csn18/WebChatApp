@@ -38,6 +38,8 @@
     padding: 1rem;
     transition: all 0.2s;
 }
-#alert {
-    width: 350px;
+
+.time {
+    position: absolute;
+    right: 1px;
 }
