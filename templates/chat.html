@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
   <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
-    <title>My chat</title>
+  <title>My chat</title>
   <script>
 
       const socket = io.connect("http://127.0.0.1:5000");
@@ -17,12 +17,20 @@
       get_users();
       message();
 
+      window.onbeforeunload = function (e) {
+          e.returnValue = window_close();
+          get_users();
+      };
+
+      function window_close() {
+          socket.close
+      }
 
       function connection() {
           socket.on('connect', function () {
-
+              console.log('connected!')
               socket.emit('user_connect', {
-                  username: "{{ username }}"
+                  username: '{{ username }}',
               });
 
 

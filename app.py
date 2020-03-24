@@ -3,8 +3,8 @@ from functools import wraps
 
 import jwt
 import mysql.connector
-from flask import Flask, render_template, request, redirect, url_for, session, make_response
-from flask_socketio import SocketIO
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_socketio import SocketIO, disconnect
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'myConfig'
@@ -95,15 +95,27 @@ def handle_send_message_event(data):
     socketio.emit('receive_message', data)
 
 
-clients = []
+clients = {}
 
 
 @socketio.on('user_connect')
 def user_connect(data):
     username = data['username']
-    clients.append(username)
-    all_users = list(set(clients))
-    print(all_users)
+    clients[request.sid] = username
+
+    all_users = list(set(clients.values()))
+    print(clients)
+
+    socketio.emit('users', all_users)
+
+
+@socketio.on('disconnect')
+def disconnect():
+    del clients[request.sid]
+    print(request.sid)
+    print(clients)
+
+    all_users = list(set(clients.values()))
     socketio.emit('users', all_users)
 
 
