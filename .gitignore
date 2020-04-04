@@ -1,12 +1,4 @@
-.env
-env/
-env*
-dist/
-build/
-*.egg
-*.egg-info/
-.tox/
-.cache/
-.pytest_cache/
+venv/
 .idea/
-docs/_build/
+.vscode/
+.env

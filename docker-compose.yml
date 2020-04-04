@@ -1,0 +1,18 @@
+version: "2"
+
+services:
+  db:
+    container_name: db
+    image: mariadb/server
+    network_mode: 'host'
+    environment:
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: 4252
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/:ro
+
+
+  server:
+    container_name: server
+    build: .
+    network_mode: 'host'

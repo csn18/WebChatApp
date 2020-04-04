@@ -11,20 +11,12 @@
   <title>My chat</title>
   <script>
 
-      const socket = io.connect("http://127.0.0.1:5000");
+      const socket = io.connect(window.location.origin);
 
       connection();
       get_users();
       message();
-
-      window.onbeforeunload = function (e) {
-          e.returnValue = window_close();
-          get_users();
-      };
-
-      function window_close() {
-          socket.close
-      }
+      setInterval(() => get_users(), 5000);
 
       function connection() {
           socket.on('connect', function () {
@@ -91,51 +83,52 @@
 </head>
 <body>
 
-<div class="container">
-  <div class="py-5 text-center">
-    <h2>Web Чат</h2>
-    <div class="alert alert-primary" role="alert">
-      <text>Вы присоеденились к чату под именем</text>
-      <strong>{{ username }}</strong>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-6">
-      <form id="messForm" method="post">
-        <label for="message_text"><b>Введите сообщение</b></label>
-        <textarea id="message_text" name="message_text" type="text" class="form-control" placeholder="Введите сообщение"
-                  required></textarea>
-        <br>
-        <input type="submit" value="Отправить" class="btn btn-dark">
-        <br>
-        <br>
-        <lable for="users"><b>Пользователи Online</b></lable>
-        <div id="users" class="alert alert-primary">
-          <div id="usersOnline"></div>
-        </div>
-      </form>
+<div class="scroll_fix" style="width: 1920px; background-color: gray(100)">
+  <div class="container" style="height: 1080px; width: 960px; background-color: white">
+    <div class="py-5 text-center">
+      <h2>Web Чат</h2>
+      <div class="alert alert-primary" role="alert">
+        <text>Вы присоеденились к чату под именем</text>
+        <strong>{{ username }}</strong>
+      </div>
     </div>
 
-
-    <div class="col-6">
-      <h3>Сообщения</h3>
-      <form method="post">
-        <div id="id" style="overflow-y: scroll; height: 600px; width: 600px;">
-          {% for id, username, message, time in history %}
-            <div id="all_mess" style="height: 90px; width: auto">
-              <div class="alert alert-primary" id="messages">
-                <b>{{ username }}</b>
-                <h6 style="position: absolute; right: 20px; top: 15px">{{ time }}</h6><br>
-                {{ message }}
+    <div class="row">
+      <div class="col-6">
+        <h3>Сообщения</h3>
+        <form method="post">
+          <div id="id" style="overflow-y: scroll; height: 450px;">
+            {% for id, username, message, time in history %}
+              <div id="all_mess" style="height: 90px; width: auto">
+                <div class="alert alert-primary" id="messages">
+                  <b>{{ username }}</b>
+                  <h6 style="position: absolute; right: 20px; top: 15px">{{ time }}</h6><br>
+                  {{ message }}
+                </div>
               </div>
-            </div>
-          {% endfor %}
-          <div id="message"></div>
-        </div>
-      </form>
-    </div>
+            {% endfor %}
+            <div id="message"></div>
+          </div>
+        </form>
+      </div>
 
+
+      <div class="col-6">
+        <h5>Пользователи Online</h5>
+        <div id="usersOnline"></div>
+      </div>
+
+      <div class="container">
+        <form id="messForm" method="post">
+          <div class="d-flex justify-content-end">
+            <input style="height: 50px" id="message_text" name="message_text" type="text" class="form-control"
+                   placeholder="Введите сообщение"
+                   required>
+            <input style="height: 50px" type="submit" value="Отправить" class="btn btn-dark">
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 </body>

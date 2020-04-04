@@ -1,22 +1,31 @@
 import datetime
+import time
 from functools import wraps
+from os import environ as env
 
 import jwt
 import mysql.connector
 from flask import Flask, render_template, request, redirect, url_for, session
-from flask_socketio import SocketIO, disconnect
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'myConfig'
 socketio = SocketIO(app)
 
-mydb = mysql.connector.connect(
-    host='127.0.0.1',
-    port=3306,
-    user='csn',
-    passwd='4252',
-    database='chat'
-)
+
+def db_connect():
+    retry_count = int(env.get('DB_RETRY_COUNT', 5))
+    for i in range(retry_count):
+        try:
+            return mysql.connector.connect(
+                host=env.get('DB_HOST', '127.0.0.1'),
+                user=env.get('DB_USER', 'root'),
+                passwd=env.get('DB_PASSWORD', '4252'),
+                database=env.get('DB_NAME', 'chat')
+            )
+        except mysql.connector.errors.InterfaceError:
+            time.sleep(5)
+    raise mysql.connector.errors.InterfaceError(msg='Database start timeout exceeded')
 
 
 @app.route('/')
@@ -39,6 +48,7 @@ def login():
 
         response = redirect(url_for('chat'))
         response.set_cookie('token', token)
+        response.set_cookie('username', username)
         return response
 
     else:
@@ -54,6 +64,7 @@ def login():
 
             response = redirect(url_for('chat'))
             response.set_cookie('token', token)
+            response.set_cookie('username', username)
             return response
 
 
@@ -83,7 +94,7 @@ def chat():
 
     return render_template('chat.html',
                            username=username,
-                           history=history
+                           history=history,
                            )
 
 
@@ -95,27 +106,24 @@ def handle_send_message_event(data):
     socketio.emit('receive_message', data)
 
 
-clients = {}
+clients_online = {}
 
 
 @socketio.on('user_connect')
 def user_connect(data):
     username = data['username']
-    clients[request.sid] = username
+    clients_online[request.sid] = username
 
-    all_users = list(set(clients.values()))
-    print(clients)
+    all_users = list(set(clients_online.values()))
 
     socketio.emit('users', all_users)
 
 
 @socketio.on('disconnect')
 def disconnect():
-    del clients[request.sid]
-    print(request.sid)
-    print(clients)
+    del clients_online[request.sid]
 
-    all_users = list(set(clients.values()))
+    all_users = list(set(clients_online.values()))
     socketio.emit('users', all_users)
 
 
@@ -128,6 +136,7 @@ def query_fetchall(query):
 
 
 def query_fetchone(query):
+    print(mydb)
     cursor = mydb.cursor(buffered=True)
     cursor.execute(query)
     result = cursor.fetchone()
@@ -141,4 +150,9 @@ def insert_db(insert, value):
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    mydb = db_connect()
+    socketio.run(app,
+                 debug=env.get('DEBUG', True),
+                 host=env.get('SERVER_HOST', '0.0.0.0'),
+                 port=env.get('SERVER_PORT', '5000')
+                 )
