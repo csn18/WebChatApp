@@ -14,7 +14,7 @@ socketio = SocketIO(app)
 
 
 def db_connect():
-    retry_count = int(env.get('DB_RETRY_COUNT', 5))
+    retry_count = int(env.get('DB_RETRY_COUNT', 10))
     for i in range(retry_count):
         try:
             return mysql.connector.connect(
@@ -26,6 +26,7 @@ def db_connect():
         except mysql.connector.errors.InterfaceError:
             time.sleep(5)
     raise mysql.connector.errors.InterfaceError(msg='Database start timeout exceeded')
+
 
 
 @app.route('/')
