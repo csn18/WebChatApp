@@ -137,7 +137,6 @@ def query_fetchall(query):
 
 
 def query_fetchone(query):
-    print(mydb)
     cursor = mydb.cursor(buffered=True)
     cursor.execute(query)
     result = cursor.fetchone()
